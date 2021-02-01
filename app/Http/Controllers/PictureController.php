@@ -38,7 +38,7 @@ class PictureController extends BaseController
 			$path = $request->photo->store('images/');
 			$result = $this->analyse($path);
 		} catch (Exception $e) {
-			
+			throw new Exception($e->getMassage());
 		}
 		
 	}

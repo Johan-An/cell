@@ -15,6 +15,8 @@ use App\Models\CellBaseModel;
  */
 class MuscleCellModel extends CellBaseModel
 {
-    protected $width;
-    protected $length;
+    const ANGLE = 180;// 夹角
+    protected $width;     // 宽
+    protected $length;    // 长
+    protected $perimeter; // 周长
 }
