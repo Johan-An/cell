@@ -34,9 +34,11 @@ class PictureController extends BaseController
 			if (!in_array($this->extension, ['.jpg', '.jpeg', '.png', '.svg'])) {
 				throw new \Exception('图片格式不合法');
 			}
+			// 获取图片名称
+			$name = $request->file('photo')->getClientOriginalName();
 			// 存储图片
 			$path = $request->photo->store('images/');
-			$result = $this->analyse($path);
+			$result = $this->analyse($path, $name, $extension);
 		} catch (Exception $e) {
 			throw new Exception($e->getMassage());
 		}
@@ -49,19 +51,27 @@ class PictureController extends BaseController
 	 * @DateTime    2021-01-28T10:20:12+0800
 	 * @return      [type]                   [description]
 	 */
-    public function analyse($path = '')
+    public function analyse($path = '', $name = '')
     {
     	// 图像存放路径
 		header('Content-type: image/jpeg');
 		// 优化图像
 		$imagick_service = new ImagickService();
 		$optimize_path = "cell_optimize_" . time() . $this->extension;
-		$imagick_service->setImage($path)->optimizeImage()->save($optimize_path);
+		$imagick_service->setImage($path, $name, $this->extension)->optimizeImage()->save($optimize_path);
 		// 图像二值化
 		$binaryzation_service = new BinaryzationService();
 		$binaryzation_service->binaryzation($path, 0.6);
 		// 切割图片
-		$segement_path = "cell_segement_" . time() . $this->extension;
-		$imagick_service->setImage($optimize_path)->segmentImage(\Imagick::COLORSPACE_RGB, 6, 6)->save($segement_path);
+		$seg_images = $imagick_service->setImage($optimize_path, $name, $this->extension)->segmentImage(\Imagick::COLORSPACE_RGB, 6, 6);
+		// 分析每一个图片单元
+		$coordinate_services = new CoordinateSystemService();
+		foreach ($seg_images as $seg_image) {
+			$coor = $this->setGravity($seg_image);
+			$width = imagesx($seg_image);
+			$height = imagesy($seg_image);
+			// 建立坐标系
+			$coordinate_services->init($coor['x'], $coor['y'], $width, $height);
+		}
     }
 }

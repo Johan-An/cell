@@ -19,13 +19,23 @@ class CoordinateSystemService
 	protected $yo_count;//坐标原点(相对于0.0的数字长度)
 	protected $xo;//坐标原点(相对于0.0的水平像素)
 	protected $yo;//坐标原点(相对于0.0的垂直像素)
+	protected $left_boundary_point = [];  // 左边界点坐标
+	protected $right_boundary_point = []; // 右边界点坐标
+	protected $top_boundary_point = [];  // 上边界点坐标
+	protected $bottom_boundary_point = []; // 下边界点坐标
+	protected $left_point_rgb = []; // 左侧点
+	protected $right_point_rgb = []; // 右侧点
+	protected $top_point_rgb = []; // 上侧点
+	protected $bottom_point_rgb = []; // 下侧点
 
-	public function __construct($xo, $yo)
+	public function init($xo, $yo, $img_width, $img_height)
 	{
 		$this->xo = $xo;
 		$this->yo = $yo;
 		$this->xo_count = $xo / $this->rate;
 		$this->yo_count = $yo / $this->rate;
+		$this->width    = $img_width / $this->rate * 2;
+		$this->height   = $img_height / $this->rate * 2;
 	}
 	/**
 	 * [__set 更改属性]
@@ -53,26 +63,26 @@ class CoordinateSystemService
 	    $background = imagecolorallocate($img, 255, 255, 255);
 		$color = imagecolorallocate($img, 255, 0, 255);
 	    //画直线
-	    imageline($img,$xo,0,$xo,$height,$background);
-		imageline($img,0,$yo,$width,$yo,$background);
+	    imageline($img,$this->xo,0,$this->xo,$height,$background);
+		imageline($img,0,$this->yo,$width,$this->yo,$background);
 	 	for($i=0;$i<=$w;$i+=$x_pixel){//宽
 				
-				imageline($img,$xo+$i,$yo,$xo+$i,$yo-3,$background);
-				imagestring ($img , 1 , $xo+$i -3, $yo+7 , (string)$i/$x_pixel, $background );
+				imageline($img,$this->xo + $i,$this->yo,$this->xo+$i,$this->yo-3,$background);
+				imagestring ($img , 1 , $this->xo+$i -3, $yo+7 , (string)$i/$x_pixel, $background );
 				if($i!=0){
-					imageline($img,$xo-$i,$yo,$xo-$i,$yo-3,$background);
-					imagestring ($img , 1 , $xo-$i -3, $yo+7 , (string)-$i/$x_pixel, $background );			
+					imageline($img,$xo-$i,$this->yo,$xo-$i,$this->yo-3,$background);
+					imagestring ($img , 1 , $xo-$i -3, $this->yo+7 , (string)-$i/$x_pixel, $background );			
 				} 
 		} 
 	 	for($i=0;$i<=$h;$i+=$y_pixel){//高
-			imageline($img,$xo,$yo+$i,$xo+3,$yo+$i,$background);
-			imagestring ($img , 1 , $xo-15 , $yo+$i-7 , (string)$i/$y_pixel, $background );
+			imageline($img,$this->xo,$this->yo+$i,$this->xo+3,$this->yo+$i,$background);
+			imagestring ($img , 1 , $this->xo-15 , $this->yo+$i-7 , (string)$i/$y_pixel, $background );
 			if($i!=0){
-				imageline($img,$xo,$yo-$i,$xo+3,$yo-$i,$background);
-				imagestring ($img , 1 , $xo-15 , $yo-$i-7 , (string)-$i/$y_pixel, $background );				
+				imageline($img,$this->xo,$this->yo-$i,$this->xo+3,$this->yo-$i,$background);
+				imagestring ($img , 1 , $this->xo-15 , $this->yo-$i-7 , (string)-$i/$y_pixel, $background );				
 			}
 		}
-		draw($fun,$img,$color,$rate,$w,$xo,$yo);
+		$this->draw($img,$color);
 	    //输出图像到网页(或者另存为)
 	    header("content-type: image/png");
 	    imagepng($img);
@@ -84,7 +94,6 @@ class CoordinateSystemService
 	 * @Description []
 	 * @Author      [XiaoAn]
 	 * @DateTime    2021-02-01T20:12:21+0800
-	 * @param       [type]                   $fun   [面积]
 	 * @param       [type]                   $img   [图像]
 	 * @param       [type]                   $color [颜色]
 	 * @param       [type]                   $rate  [比率]
@@ -93,44 +102,157 @@ class CoordinateSystemService
 	 * @param       [type]                   $yo    [description]
 	 * @return      [type]                          [description]
 	 */
-	public function draw($fun,$img,$color,$rate,$w,$xo,$yo)
+	public function draw($img,$color)
 	{
 		
-		for($i=0;$i<=$w;$i+=1){
+		for($i=0;$i<=$this->width;$i+=1){
 			
-	   		$result=0;
-			$x= +$i;
-			$a=$x/$rate;
-			$m=$a;
-			//print_r($m);
-			eval($fun);
+	   		$result = 0;
+			$x += $i;
+			$a = $x/$this->rate;
+			$m = $a;
 			$b=$result;
-			$y=$b*$rate;
+			$y=$b*$this->rate;
 			$xi = $x-1;
-			$ai=$xi/$rate;
+			$ai=$xi/$this->rate;
 			$m=$ai;
-			eval($fun);
 			$bi=$result;
-			$yi=$bi*$rate;
+			$yi=$bi*$this->rate;
 			
-			imageline($img,$xo+$x,$yo-$y,$xo+$xi,$yo-$yi,$color);  
+			imageline($img,$this->xo+$x,$this->yo-$y,$this->xo+$xi,$this->yo-$yi,$color);  
 	  		$result=0;
 			$x= -$i;
 			
-			$a=$x/$rate;
+			$a=$x/$this->rate;
 			//print_r($x);
 			$m=$a;
-			eval($fun);
 			$b=$result;
-			$y=$b*$rate;
+			$y=$b*$this->rate;
 			$xi = $x+1;
-			$ai=$xi/$rate;
+			$ai=$xi/$this->rate;
 			$m=$ai;
-			eval($fun);
 			$bi=$result;
-			$yi=$bi*$rate;
-			imageline($img,$xo+$x,$yo-$y,$xo+$xi,$yo-$yi,$color);
+			$yi=$bi*$this->rate;
+			imageline($img,$this->xo+$x,$this->yo-$y,$this->xo+$xi,$this->yo-$yi,$color);
 		}
+	}
+	/**
+	 * [getXBoundatyPoint 扫描x轴的边界点]
+	 * @Description []
+	 * @Author      [XiaoAn]
+	 * @DateTime    2021-02-05T16:31:02+0800
+	 * @param       string                   $path [description]
+	 * @return      [type]                         [description]
+	 */
+	public function getXBoundatyPoint($path = '')
+	{
+		$image  = imagecreatefrompng($path);
+		$width  = imagesx($image);
+		$height = imagesy($image);
+		$map = [];
+		for ($x = 0; $x < $height; $x++) {
+		    $map[$x] = [];
+		    for ($y = 0; $y < $width; $y++) {
+		        $color = imagecolorat($image, $x, $y);
+		        $r = ($color >> 16) & 0xFF;
+		        $g = ($color >> 8) & 0xFF;
+		        $b = $color & 0xFF;
+		        // 左侧点像素为白色，该点像素为黑色，则认为该点为左边界点
+		        if (!empty($this->left_point_rgb)) {
+		        	if ($this->left_point_rgb['r'] == 255 
+		        		&& $this->left_point_rgb['g'] == 255 
+		        		&& $this->left_point_rgb['b'] == 255) {
+		        		if ($r == 0 && $g == 0 && $b == 0) {
+		        			$this->left_boundary_point = [
+		        				$x / $this->rate, 
+		        				$y / $this->rate
+		        			];
+		        		}
+		        	}
+		        }
+		        // 左侧点像素为黑色，该点像素为白色，则认为该点为右边界点
+		        if (!empty($this->left_point_rgb)) {
+		        	if ($this->left_point_rgb['r'] == 0 
+		        		&& $this->left_point_rgb['g'] == 0 
+		        		&& $this->left_point_rgb['b'] == 0) {
+		        		if ($r == 255 && $g == 255 && $b == 255) {
+		        			$this->right_boundary_point = [
+		        				$x / $this->rate, 
+		        				$y / $this->rate
+		        			];
+		        		}
+		        	}
+		        }
+		        $this->left_point_rgb = [
+		            "r" => $r,
+		            "g" => $g,
+		            "b" => $b
+		        ];
+		    }
+		}
+		return [
+			'left'  => $this->left_boundary_point,
+			'right' => $this->right_boundary_point
+		];
+	}
+	/**
+	 * [getYBoundatyPoint 扫描y轴的边界点]
+	 * @Description []
+	 * @Author      [XiaoAn]
+	 * @DateTime    2021-02-05T16:31:02+0800
+	 * @param       string                   $path [description]
+	 * @return      [type]                         [description]
+	 */
+	public function getYBoundatyPoint($path = '')
+	{
+		$image  = imagecreatefrompng($path);
+		$width  = imagesx($image);
+		$height = imagesy($image);
+		$map = [];
+		for ($y = 0; $y < $height; $y++) {
+		    $map[$y] = [];
+		    for ($x = 0; $x < $width; $x++) {
+		        $color = imagecolorat($image, $x, $y);
+		        $r = ($color >> 16) & 0xFF;
+		        $g = ($color >> 8) & 0xFF;
+		        $b = $color & 0xFF;
+		        // 上侧点像素为黑色，该点像素为白色，则认为该点为上边界点
+		        if (!empty($this->top_point_rgb)) {
+		        	if ($this->top_point_rgb['r'] == 255 
+		        		&& $this->top_point_rgb['g'] == 255 
+		        		&& $this->top_point_rgb['b'] == 255) {
+		        		if ($r == 0 && $g == 0 && $b == 0) {
+		        			$this->top_boundary_point = [
+		        				$x / $this->rate, 
+		        				$y / $this->rate
+		        			];
+		        		}
+		        	}
+		        }
+		        // 上侧点像素为白色，该点像素为黑色，则认为该点为下边界点
+		        if (!empty($this->top_point_rgb)) {
+		        	if ($this->top_point_rgb['r'] == 0 
+		        		&& $this->top_point_rgb['g'] == 0 
+		        		&& $this->top_point_rgb['b'] == 0) {
+		        		if ($r == 255 && $g == 255 && $b == 255) {
+		        			$this->bottom_boundary_point = [
+		        				$x / $this->rate, 
+		        				$y / $this->rate
+		        			];
+		        		}
+		        	}
+		        }
+		        $this->top_point_rgb = [
+		            "r" => $r,
+		            "g" => $g,
+		            "b" => $b
+		        ];
+		    }
+		}
+		return [
+			'top'    => $this->top_boundary_point,
+			'bottom' => $this->bottom_boundary_point
+		];
 	}
 }
 

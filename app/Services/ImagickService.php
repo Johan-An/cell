@@ -8,13 +8,27 @@
  */
 namespace App\Http\Services;
 
+use Illuminate\Support\Facades\Storage;
+
 class ImagickService extends AnotherClass
 {
 	protected $image;
-    
-    public function setImage($path = '')
+    protected $name;
+    protected $seg_images;
+    /**
+     * [setImage 设置图片]
+     * @Description []
+     * @Author      [XiaoAn]
+     * @DateTime    2021-02-04T11:24:40+0800
+     * @param       string                   $path      [路径]
+     * @param       string                   $name      [名称]
+     * @param       [type]                   $extension [扩展]
+     */
+    public function setImage($path = '', $name = '', $extension)
     {
-        $this->image = new \Imagick($path);
+        $this->image      = new \Imagick($path);
+        $this->name      = $name;
+        $this->extension = $extension;
         return $this;
     }
     /**
@@ -36,7 +50,7 @@ class ImagickService extends AnotherClass
 		return $this;
     }
     /**
-     * [segmentImage 切割图片]
+     * [segmentImage 切割图片并存储]
      * @Description []
      * @Author      [XiaoAn]
      * @DateTime    2021-01-29T10:29:00+0800
@@ -47,7 +61,29 @@ class ImagickService extends AnotherClass
      */
     public function segmentImage($colorSpace, $clusterThreshold, $smoothThreshold)
     {
-        $this->image->segmentImage($colorSpace, $clusterThreshold, $smoothThreshold);
+        $images_blob  = $this->image->segmentImage($colorSpace, $clusterThreshold, $smoothThreshold);
+        $images_count = count($images_blob);
+        $time = time();
+        for($i = 0; $i < $images_count; $i++){
+            // 切割后的图片的名称
+            $seg_images_name = $this->name . '_' . $time . '_' . $i . $this->extension;
+            // 保存切割后的图片
+            $this->seg_images[] = $seg_images_name;
+            Storage::put($seg_images_name, $contents);
+        }
+        return $this->seg_images;
+    }
+    /**
+     * [setGravity 获取图片的几何重心]
+     * @Description []
+     * @Author      [XiaoAn]
+     * @DateTime    2021-02-04T11:30:53+0800
+     * @param       [type]                   $path [description]
+     */
+    public function setGravity($path)
+    {
+        $coordinate = $this->image->setGravity($path);
+        return $coordinate;
     }
     /**
      * [save 保存图像]
@@ -62,4 +98,5 @@ class ImagickService extends AnotherClass
     	$this->image->writeImage($path);
     	return $path;
     }
+
 }
