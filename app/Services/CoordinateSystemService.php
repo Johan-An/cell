@@ -144,15 +144,15 @@ class CoordinateSystemService
 	 * @param       string                   $path [description]
 	 * @return      [type]                         [description]
 	 */
-	public function getXBoundatyPoint($path = '')
+	public function scanXBoundatyPoint($path = '')
 	{
 		$image  = imagecreatefrompng($path);
 		$width  = imagesx($image);
 		$height = imagesy($image);
 		$map = [];
-		for ($x = 0; $x < $height; $x++) {
+		for ($x = 0; $x < $width; $x++) {
 		    $map[$x] = [];
-		    for ($y = 0; $y < $width; $y++) {
+		    for ($y = 0; $y < $height; $y++) {
 		        $color = imagecolorat($image, $x, $y);
 		        $r = ($color >> 16) & 0xFF;
 		        $g = ($color >> 8) & 0xFF;
@@ -203,7 +203,7 @@ class CoordinateSystemService
 	 * @param       string                   $path [description]
 	 * @return      [type]                         [description]
 	 */
-	public function getYBoundatyPoint($path = '')
+	public function scanYBoundatyPoint($path = '')
 	{
 		$image  = imagecreatefrompng($path);
 		$width  = imagesx($image);
@@ -252,6 +252,123 @@ class CoordinateSystemService
 		return [
 			'top'    => $this->top_boundary_point,
 			'bottom' => $this->bottom_boundary_point
+		];
+	}
+	/**
+	 * [scanYPointByX 根据x坐标点获取对应的边界点上的y值]
+	 * @Description []
+	 * @Author      [XiaoAn]
+	 * @DateTime    2021-02-07T11:38:48+0800
+	 * @param       string                   $path   [图片路径]
+	 * @param       string                   $x [x坐标值]
+	 * @return      [type]                           [description]
+	 */
+	public function scanYPointByX($path = '', $x = '')
+	{
+		$image  = imagecreatefrompng($path);
+		$height = imagesy($image);
+		$map = [];
+		for ($y = 0; $y < $height; $y++) {
+	        $color = imagecolorat($image, $x, $y);
+	        $r = ($color >> 16) & 0xFF;
+	        $g = ($color >> 8) & 0xFF;
+	        $b = $color & 0xFF;
+	        // 上侧点像素为黑色，该点像素为白色，则认为该点为上边界点
+	        if (!empty($this->top_point_rgb)) {
+	        	if ($this->top_point_rgb['r'] == 255 
+	        		&& $this->top_point_rgb['g'] == 255 
+	        		&& $this->top_point_rgb['b'] == 255) {
+	        		if ($r == 0 && $g == 0 && $b == 0) {
+	        			$this->top_boundary_point = [
+	        				$x / $this->rate, 
+	        				$y / $this->rate
+	        			];
+	        		}
+	        	}
+	        }
+	        // 上侧点像素为白色，该点像素为黑色，则认为该点为下边界点
+	        if (!empty($this->top_point_rgb)) {
+	        	if ($this->top_point_rgb['r'] == 0 
+	        		&& $this->top_point_rgb['g'] == 0 
+	        		&& $this->top_point_rgb['b'] == 0) {
+	        		if ($r == 255 && $g == 255 && $b == 255) {
+	        			$this->bottom_boundary_point = [
+	        				$x / $this->rate, 
+	        				$y / $this->rate
+	        			];
+	        		}
+	        	}
+	        }
+	        $this->top_point_rgb = [
+	            "r" => $r,
+	            "g" => $g,
+	            "b" => $b
+	        ];
+	    }
+		return [
+			'top'    => $this->top_boundary_point,
+			'bottom' => $this->bottom_boundary_point
+		];
+	}
+	/**
+	 * [scanTopPoints 扫描顶点坐标]
+	 * @Description []
+	 * @Author      [XiaoAn]
+	 * @DateTime    2021-02-07T17:57:31+0800
+	 * @param       string                   $path  [description]
+	 * @param       [type]                   $left  [description]
+	 * @param       [type]                   $right [description]
+	 * @return      [type]                          [description]
+	 */
+	public function scanTopPoints($path = '', $left, $right)
+	{
+		$image  = imagecreatefrompng($path);
+		$width  = imagesx($image);
+		$height = imagesy($image);
+		$map = [];
+		for ($x = 0; $x < $width; $x++) {
+		    $map[$x] = [];
+		    for ($y = 0; $y < $height; $y++) {
+		        $color = imagecolorat($image, $x, $y);
+		        $r = ($color >> 16) & 0xFF;
+		        $g = ($color >> 8) & 0xFF;
+		        $b = $color & 0xFF;
+		        // 左侧点像素为白色，该点像素为黑色，则认为该点为左边界点
+		        if (!empty($this->left_point_rgb)) {
+		        	if ($this->left_point_rgb['r'] == 255 
+		        		&& $this->left_point_rgb['g'] == 255 
+		        		&& $this->left_point_rgb['b'] == 255) {
+		        		if ($r == 0 && $g == 0 && $b == 0) {
+		        			$this->left_boundary_point = [
+		        				$x / $this->rate, 
+		        				$y / $this->rate
+		        			];
+		        		}
+		        	}
+		        }
+		        // 左侧点像素为黑色，该点像素为白色，则认为该点为右边界点
+		        if (!empty($this->left_point_rgb)) {
+		        	if ($this->left_point_rgb['r'] == 0 
+		        		&& $this->left_point_rgb['g'] == 0 
+		        		&& $this->left_point_rgb['b'] == 0) {
+		        		if ($r == 255 && $g == 255 && $b == 255) {
+		        			$this->right_boundary_point = [
+		        				$x / $this->rate, 
+		        				$y / $this->rate
+		        			];
+		        		}
+		        	}
+		        }
+		        $this->left_point_rgb = [
+		            "r" => $r,
+		            "g" => $g,
+		            "b" => $b
+		        ];
+		    }
+		}
+		return [
+			'left'  => $this->left_boundary_point,
+			'right' => $this->right_boundary_point
 		];
 	}
 }
