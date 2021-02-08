@@ -23,10 +23,14 @@ class CoordinateSystemService
 	protected $right_boundary_point = []; // 右边界点坐标
 	protected $top_boundary_point = [];  // 上边界点坐标
 	protected $bottom_boundary_point = []; // 下边界点坐标
-	protected $left_point_rgb = []; // 左侧点
-	protected $right_point_rgb = []; // 右侧点
-	protected $top_point_rgb = []; // 上侧点
-	protected $bottom_point_rgb = []; // 下侧点
+	protected $left_point_rgb = []; // 左侧点rgb
+	protected $right_point_rgb = []; // 右侧点rgb
+	protected $top_point_rgb = []; // 上侧点rgb
+	protected $bottom_point_rgb = []; // 下侧点rgb
+	protected $left_point;// 左侧点坐标
+	protected $right_point;// 右侧点坐标
+	protected $gradient;// 斜率
+	protected $vertexs;// 顶点
 
 	public function init($xo, $yo, $img_width, $img_height)
 	{
@@ -150,7 +154,9 @@ class CoordinateSystemService
 		$width  = imagesx($image);
 		$height = imagesy($image);
 		$map = [];
+		$i = 0;
 		for ($x = 0; $x < $width; $x++) {
+			$this->left_point_rgb = [];
 		    $map[$x] = [];
 		    for ($y = 0; $y < $height; $y++) {
 		        $color = imagecolorat($image, $x, $y);
@@ -159,6 +165,9 @@ class CoordinateSystemService
 		        $b = $color & 0xFF;
 		        // 左侧点像素为白色，该点像素为黑色，则认为该点为左边界点
 		        if (!empty($this->left_point_rgb)) {
+		        	if ($i >= 1) {
+		        		continue;
+		        	}
 		        	if ($this->left_point_rgb['r'] == 255 
 		        		&& $this->left_point_rgb['g'] == 255 
 		        		&& $this->left_point_rgb['b'] == 255) {
@@ -167,6 +176,7 @@ class CoordinateSystemService
 		        				$x / $this->rate, 
 		        				$y / $this->rate
 		        			];
+		        			$i++;
 		        		}
 		        	}
 		        }
@@ -209,8 +219,10 @@ class CoordinateSystemService
 		$width  = imagesx($image);
 		$height = imagesy($image);
 		$map = [];
+		$i = 0;
 		for ($y = 0; $y < $height; $y++) {
 		    $map[$y] = [];
+		    $this->top_point_rgb = [];
 		    for ($x = 0; $x < $width; $x++) {
 		        $color = imagecolorat($image, $x, $y);
 		        $r = ($color >> 16) & 0xFF;
@@ -218,6 +230,9 @@ class CoordinateSystemService
 		        $b = $color & 0xFF;
 		        // 上侧点像素为黑色，该点像素为白色，则认为该点为上边界点
 		        if (!empty($this->top_point_rgb)) {
+		        	if (!$i >= 1) {
+		        		continue;
+		        	}
 		        	if ($this->top_point_rgb['r'] == 255 
 		        		&& $this->top_point_rgb['g'] == 255 
 		        		&& $this->top_point_rgb['b'] == 255) {
@@ -226,6 +241,7 @@ class CoordinateSystemService
 		        				$x / $this->rate, 
 		        				$y / $this->rate
 		        			];
+		        			$i++;
 		        		}
 		        	}
 		        }
@@ -311,51 +327,47 @@ class CoordinateSystemService
 		];
 	}
 	/**
-	 * [scanTopPoints 扫描顶点坐标]
+	 * [scanVertexPoints 扫描顶点坐标]
 	 * @Description []
 	 * @Author      [XiaoAn]
 	 * @DateTime    2021-02-07T17:57:31+0800
-	 * @param       string                   $path  [description]
-	 * @param       [type]                   $left  [description]
-	 * @param       [type]                   $right [description]
-	 * @return      [type]                          [description]
+	 * @param       string                   $path  [图片路径]
+	 * @return      [array]                         [顶点坐标集合]
 	 */
-	public function scanTopPoints($path = '', $left, $right)
+	public function scanVertexPoints($path = '')
 	{
 		$image  = imagecreatefrompng($path);
 		$width  = imagesx($image);
 		$height = imagesy($image);
 		$map = [];
 		for ($x = 0; $x < $width; $x++) {
+			$this->left_point_rgb = [];
 		    $map[$x] = [];
 		    for ($y = 0; $y < $height; $y++) {
 		        $color = imagecolorat($image, $x, $y);
 		        $r = ($color >> 16) & 0xFF;
 		        $g = ($color >> 8) & 0xFF;
 		        $b = $color & 0xFF;
-		        // 左侧点像素为白色，该点像素为黑色，则认为该点为左边界点
+		        // 左侧点像素为白色，该点像素为黑色，则认为该点为y轴左侧边上的点
 		        if (!empty($this->left_point_rgb)) {
 		        	if ($this->left_point_rgb['r'] == 255 
 		        		&& $this->left_point_rgb['g'] == 255 
 		        		&& $this->left_point_rgb['b'] == 255) {
 		        		if ($r == 0 && $g == 0 && $b == 0) {
-		        			$this->left_boundary_point = [
-		        				$x / $this->rate, 
-		        				$y / $this->rate
-		        			];
-		        		}
-		        	}
-		        }
-		        // 左侧点像素为黑色，该点像素为白色，则认为该点为右边界点
-		        if (!empty($this->left_point_rgb)) {
-		        	if ($this->left_point_rgb['r'] == 0 
-		        		&& $this->left_point_rgb['g'] == 0 
-		        		&& $this->left_point_rgb['b'] == 0) {
-		        		if ($r == 255 && $g == 255 && $b == 255) {
-		        			$this->right_boundary_point = [
-		        				$x / $this->rate, 
-		        				$y / $this->rate
-		        			];
+		        			$x = $x / $this->rate;
+		        			$y = $y / $this->rate;
+		        			if (!empty($this->left_point)) {
+		        				$gradient = ($this->left_point[0] - $x) / ($this->left_point[1] - $y);
+		        				// 斜率不同即为顶点
+		        				if (!empty($this->gradient) && ($gradient != $this->gradient)) {
+		        					$this->vertexs[] = [
+		        						'x' => $this->left_point[0],
+		        						'y' => $this->left_point[1]
+		        					];
+		        				}
+		        				$this->gradient = $gradient;
+		        			}
+		        			$this->left_point = [$x, $y];
 		        		}
 		        	}
 		        }
@@ -366,10 +378,30 @@ class CoordinateSystemService
 		        ];
 		    }
 		}
-		return [
-			'left'  => $this->left_boundary_point,
-			'right' => $this->right_boundary_point
-		];
+		return $this->vertexs;
+	}
+	/**
+	 * [calculateAngle 计算角度]
+	 * @Description []
+	 * @Author      [XiaoAn]
+	 * @DateTime    2021-02-08T15:54:31+0800
+	 * @param       [type]                   $x1 [坐标1的横坐标]
+	 * @param       [type]                   $y1 [坐标1的纵坐标]
+	 * @param       [type]                   $x2 [坐标2的横坐标]
+	 * @param       [type]                   $y2 [坐标2的纵坐标]
+	 * @return      [type]                       [description]
+	 */
+	public function calculateAngle($x1, $y1, $x2, $y2)
+	{
+		$abs_x1 = abs($x1);
+		$abs_y1 = abs($y1);
+		$asin1 = ($abs_y1) / sqrt(pow($abs_x1, 2) + pow($abs_y1, 2));
+		$abs_x2 = abs($x2);
+		$abs_y2 = abs($y2);
+		$asin2 = ($abs_y2) / sqrt(pow($abs_x2, 2) + pow($abs_y2, 2));
+		$angle1 = rad2deg(asin($asin1));
+		$angle2 = rad2deg(asin($asin2));
+		return 180 - $angle1 - $angle2;
 	}
 }
 

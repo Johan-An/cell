@@ -6,7 +6,7 @@
  * @platform    Windows
  * @Created By Sublime Text3
  */
-namespace App;
+namespace App\Models;
 
 use App\Models\CellBaseModel;
 

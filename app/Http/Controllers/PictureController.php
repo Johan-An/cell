@@ -10,6 +10,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Services\ImagickService;
 use App\Http\Services\BinaryzationService;
+use App\Http\Services\ClassifyAndCountService;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 
@@ -67,19 +68,22 @@ class PictureController extends BaseController
 		$seg_images = $imagick_service->setImage($optimize_path, $name, $this->extension)->segmentImage(\Imagick::COLORSPACE_RGB, 6, 6);
 		// 分析每一个图片单元
 		$this->coordinate_services = new CoordinateSystemService();
+		$classify_services = new ClassifyAndCountService();
 		foreach ($seg_images as $seg_image) {
-			$coor = $this->setGravity($seg_image);
-			$width = imagesx($seg_image);
+			$coor   = $this->setGravity($seg_image);
+			$width  = imagesx($seg_image);
 			$height = imagesy($seg_image);
 			// 建立坐标系
 			$this->coordinate_services->init($coor['x'], $coor['y'], $width, $height);
 			// 扫描边界点
 			$x_boundary_point = $this->coordinate_services->scanXBoundatyPoint($seg_image);
 			$y_boundary_point = $this->coordinate_services->scanYBoundatyPoint($seg_image);
-			// 任意取出两点
-			$this->bisectionVertex($seg_image, $left_boundary, $right_boudary);
-
+			// 任意取出相邻的两顶点
+			$vertexs = $this->coordinate_services->scanVertexPoints($seg_image);
+			$angle   = $this->coordinate_services->calculateAngle($vertexs[0]['x'], $vertexs[0]['y'], $vertexs[1]['x'], $vertexs[1]['y']);
+			$models  = $classify_services->classify($angle);
 		}
+		return $models;
     }
     /**
      * [bisectionVertex 通过二分法获取顶点]
@@ -100,7 +104,7 @@ class PictureController extends BaseController
 		$right_point = $this->coordinate_services->scanYPointByX($seg_image, $x_right);
 		// 取出中间值
 		$x_middle = ($x_left + $x_right) / 2;
-		$middle_point = $this->coordinate_services->scanYPointByX($seg_image, $x_middle);
+		$middle_point   = $this->coordinate_services->scanYPointByX($seg_image, $x_middle);
 		$left_gradient  = $this->calculateGradient($left_point['top'][0], $left_point['top'][1], $middle_point['top'][0], $middle_point['top'][1]);
 		$right_gradient = $this->calculateGradient($middle_point['top'][0], $middle_point['top'][1],$right_point['top'][0], $right_point['top'][1]);
     }

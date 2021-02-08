@@ -98,5 +98,4 @@ class ImagickService extends AnotherClass
     	$this->image->writeImage($path);
     	return $path;
     }
-
 }
