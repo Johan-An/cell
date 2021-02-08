@@ -403,5 +403,43 @@ class CoordinateSystemService
 		$angle2 = rad2deg(asin($asin2));
 		return 180 - $angle1 - $angle2;
 	}
+	public function getHec ()
+  	{
+	    $size = getimagesize($this->imgPath);
+	    $res = imagecreatefrompng($this->imgPath);
+	    for ($i = 0; $i < $size[1]; ++ $i) {
+	      for ($j = 0; $j < $size[0]; ++ $j) {
+	        $rgb = imagecolorat($res, $j, $i);
+	        $rgbarray = imagecolorsforindex($res, $rgb);
+	        if ($rgbarray['red'] < 125 || $rgbarray['green'] < 125 ||
+	             $rgbarray['blue'] < 125) {
+	          $data[$i][$j] = 1;
+	        } else {
+	          $data[$i][$j] = 0;
+	        }
+	      }
+	    }
+	    $this->imgSize = $size;
+	    $this->hecData = $data;
+  	}
+ 	public function magHorData ()
+    {
+	    $data = $this->hecData;
+	    $size = $this->imgSize;
+	    $z = 0;
+	    for ($i = 0; $i < $size[1]; ++ $i) {
+	      if (in_array('1', $data[$i])) {
+	        $z ++;
+	        for ($j = 0; $j < $size[0]; ++ $j) {
+	          if ($data[$i][$j] == '1') {
+	            $newdata[$z][$j] = 1;
+	          } else {
+	            $newdata[$z][$j] = 0;
+	          }
+	        }
+	      }
+	    }
+	    return $this->horData = $newdata;
+	  }
 }
 
